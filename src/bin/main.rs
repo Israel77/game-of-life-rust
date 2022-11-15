@@ -37,7 +37,7 @@ fn main() {
     let mut game;
 
     match option.as_ref() {
-        "map" => game = Game::from_compiled(format!("maps/compiled/map_{}.txt", map)),
+        "map" => game = Game::from_compiled(map),
         "file" => game = Game::from_file(map),
         _ => panic!("Invalid options: {}", option)
     }
