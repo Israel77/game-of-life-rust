@@ -1,37 +1,28 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Copy, PartialEq, Serialize, Deserialize)]
-pub enum CellState {
+pub enum Cell {
     Alive,
-    Dead
-}
-
-#[derive(Clone, Copy, Serialize, Deserialize)]
-pub struct Cell {
-    state: CellState,
+    Dead,
 }
 
 impl Cell {
-
-    pub fn new(state: CellState) -> Cell {
-        Cell {
-            state: state
-        }
-    }
-
-    pub fn update(&mut self, number_of_neighbors: u8) {
-        match self.state {
-            CellState::Alive => if (number_of_neighbors < 2) || (number_of_neighbors > 3) {
-                self.state = CellState::Dead
+    pub fn update(&self, number_of_neighbors: u8) -> Self {
+        match self {
+            Cell::Alive => {
+                if (number_of_neighbors < 2) || (number_of_neighbors > 3) {
+                    Cell::Dead
+                } else {
+                    *self
+                }
             }
-            CellState::Dead => if number_of_neighbors == 3 {
-                self.state = CellState::Alive;
+            Cell::Dead => {
+                if number_of_neighbors == 3 {
+                    Cell::Alive
+                } else {
+                    *self
+                }
             }
         }
-    }
-
-    pub fn get_state(&self) -> &CellState {
-        &self.state
     }
 }
-

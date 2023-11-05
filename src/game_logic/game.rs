@@ -4,12 +4,10 @@ use std::io;
 use std::io::BufRead;
 use std::path::Path;
 
-
 use bincode;
 use regex::Regex;
 
 use super::cell::Cell;
-use super::cell::CellState;
 
 pub type GameState = Vec<Vec<Cell>>;
 
@@ -21,14 +19,33 @@ pub struct Game {
 }
 
 impl Game {
-    // pub fn new(rows: u16, cols: u16) -> Game {
-    //     Game {
-    //         state: vec![Cell::new(CellState::Dead); (rows * cols) as usize],
-    //         rows: rows,
-    //         cols: cols,
-    //     }
-    // }
+    /// Creates a new empty game
+    pub fn new(rows: u16, cols: u16) -> Game {
+        Game {
+            state: vec![vec![Cell::Dead; (cols) as usize]; rows as usize],
+            rows: rows,
+            cols: cols,
+        }
+    }
 
+    /// Create a new game from a vector of vectors
+    pub fn from_rows(state: GameState) -> Game {
+        let row_length = state[0].len();
+        let num_rows = state.len();
+
+        // Validates that all rows must have the same length
+        if state.iter().all(|row| row.len() == row_length) {
+            Game {
+                state: state,
+                rows: num_rows as u16,
+                cols: row_length as u16,
+            }
+        } else {
+            panic!()
+        }
+    }
+
+    // TODO: Documentar e testar
     pub fn from_string(src: &str, alive: char, dead: char, size: (u16, u16)) -> Game {
         let (rows, cols) = size;
         let mut src_as_chars = src.chars();
@@ -39,8 +56,8 @@ impl Game {
             for _ in 0..cols {
                 let c = src_as_chars.nth(0).unwrap();
                 match c {
-                    a if a == alive => row.push(Cell::new(CellState::Alive)),
-                    a if a == dead => row.push(Cell::new(CellState::Dead)),
+                    a if a == alive => row.push(Cell::Alive),
+                    a if a == dead => row.push(Cell::Dead),
                     _ => (),
                 }
                 _counter += 1;
@@ -59,6 +76,7 @@ impl Game {
         }
     }
 
+    // TODO: Documentar e testar
     pub fn from_file<P>(filename: P) -> Game
     where
         P: AsRef<Path>,
@@ -105,37 +123,41 @@ impl Game {
         Game::from_string(&src, alive, dead, (rows, cols))
     }
 
+    // TODO: Documentar e testar
     pub fn from_compiled<P>(filename: P) -> Game
     where
         P: AsRef<Path>,
     {
-
         let reader = File::open(filename).unwrap();
 
         bincode::deserialize_from(reader).unwrap()
     }
 
+    // TODO: Documentar e testar
     /// Update the game (1 step) according to the rules
     pub fn update(&mut self) -> () {
         let mut _state = self.state.clone();
         for i in 0..self.rows {
             for j in 0..self.cols {
                 let neighbors = { self.count_neighbors(i, j) };
-                _state[i as usize][j as usize].update(neighbors);
+                let current_cell = self.state[i as usize][j as usize];
+                _state[i as usize][j as usize] = current_cell.update(neighbors);
             }
         }
         self.state = _state;
     }
 
+    // TODO: Documentar e testar
     pub fn get_item(&self, i: u16, j: u16) -> &Cell {
         &(self.state[i as usize][j as usize])
     }
 
+    // TODO: Documentar e testar
     fn count_neighbors(&self, row: u16, col: u16) -> u8 {
         fn cell_to_int(cell: &Cell) -> u8 {
-            match cell.get_state() {
-                CellState::Alive => 1,
-                CellState::Dead => 0,
+            match cell {
+                Cell::Alive => 1,
+                Cell::Dead => 0,
             }
         }
 
@@ -238,4 +260,37 @@ impl Game {
             .fold(0, |acc: u8, c| acc + cell_to_int(c)),
         }
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::game_logic::cell::Cell;
+
+    use super::{Game, GameState};
+
+    #[test]
+    fn create_new_game() -> () {
+        let game = Game::new(10, 10);
+        game.state
+            .iter()
+            .flatten()
+            .all(|cell| -> bool { cell == &Cell::Dead });
+    }
+
+    // #[test]
+    // fn create_new_game_from_rows() -> () {
+    //     let state = vec![
+    //         vec![CellState::Dead, CellState::Dead],
+    //         vec![CellState::Alive, CellState::Dead],
+    //     ];
+
+    //     let num_rows = state.len();
+    //     let num_cols = state[0].len();
+
+    //     let game = Game::from_rows(state);
+
+    //     assert_eq!(game.state, state);
+    //     assert_eq!(game.rows, num_rows);
+    //     assert_eq!(game.cols, num_cols);
+    // }
 }

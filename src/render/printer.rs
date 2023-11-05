@@ -8,13 +8,13 @@ pub trait GameRenderer {
 pub struct PrintRenderer {}
 
 pub struct FancyPrinter {
-    prev_state: GameState
+    prev_state: GameState,
 }
 
 impl FancyPrinter {
     pub fn new(state: &GameState) -> FancyPrinter {
         FancyPrinter {
-            prev_state: state.clone()
+            prev_state: state.clone(),
         }
     }
 }
@@ -24,11 +24,11 @@ impl GameRenderer for PrintRenderer {
         print!("{esc}[2J{esc}[1;1H", esc = 27 as char);
         let rows = game.rows;
         let cols = game.cols;
-        for i in 0..rows{
+        for i in 0..rows {
             for j in 0..cols {
-                match game.get_item(i, j).get_state() {
-                    CellState::Alive => yellow!{"@"},
-                    CellState::Dead => print!{"."}
+                match game.get_item(i, j) {
+                    Cell::Alive => yellow! {"@"},
+                    Cell::Dead => print! {"."},
                 }
             }
             println!("");
@@ -41,12 +41,24 @@ impl GameRenderer for FancyPrinter {
         print!("{esc}[2J{esc}[1;1H", esc = 27 as char);
         let rows = game.rows;
         let cols = game.cols;
-        for i in 0..rows{
+        for i in 0..rows {
             for j in 0..cols {
-                let previous = *(self.prev_state[i as usize][j as usize]).get_state();
-                match game.get_item(i, j).get_state() {
-                    CellState::Alive => if previous == CellState::Alive {yellow!{"@"}} else {green!{"@"}},
-                    CellState::Dead => if previous == CellState::Alive {red!{"x"}} else {print!{"."}}
+                let previous = self.prev_state[i as usize][j as usize];
+                match game.get_item(i, j) {
+                    Cell::Alive => {
+                        if previous == Cell::Alive {
+                            yellow! {"@"}
+                        } else {
+                            green! {"@"}
+                        }
+                    }
+                    Cell::Dead => {
+                        if previous == Cell::Alive {
+                            red! {"x"}
+                        } else {
+                            print! {"."}
+                        }
+                    }
                 }
                 self.prev_state[i as usize][j as usize] = *game.get_item(i, j);
             }
