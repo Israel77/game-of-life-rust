@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io;
 use std::io::BufRead;
+use std::iter::zip;
 use std::path::Path;
 
 use bincode;
@@ -137,12 +138,11 @@ impl Game {
     /// Update the game (1 step) according to the rules
     pub fn update(&mut self) -> () {
         let mut _state = self.state.clone();
-        for i in 0..self.rows {
-            for j in 0..self.cols {
-                let neighbors = { self.count_neighbors(i, j) };
-                let current_cell = self.state[i as usize][j as usize];
-                _state[i as usize][j as usize] = current_cell.update(neighbors);
-            }
+
+        for (i, j) in zip(0..self.rows, 0..self.cols) {
+            let neighbors = { self.count_neighbors(i, j) };
+            let current_cell = self.state[i as usize][j as usize];
+            _state[i as usize][j as usize] = current_cell.update(neighbors);
         }
         self.state = _state;
     }
@@ -166,87 +166,71 @@ impl Game {
 
         match (row, col) {
             // Top-left corner
-            a if a == (0, 0) => [
+            a if a == (0, 0) => vec![
                 self.get_item(row + 1, col),
                 self.get_item(row, col + 1),
                 self.get_item(row + 1, col + 1),
-            ]
-            .iter()
-            .fold(0, |acc: u8, c| acc + cell_to_int(c)),
+            ],
 
             // Top-right corner
-            a if a == (0, max_col) => [
+            a if a == (0, max_col) => vec![
                 self.get_item(row, col - 1),
                 self.get_item(row + 1, col - 1),
                 self.get_item(row + 1, col),
-            ]
-            .iter()
-            .fold(0, |acc: u8, c| acc + cell_to_int(c)),
+            ],
 
             // Bottom-left corner
-            a if a == (max_row, 0) => [
+            a if a == (max_row, 0) => vec![
                 self.get_item(row - 1, col),
                 self.get_item(row - 1, col + 1),
                 self.get_item(row, col + 1),
-            ]
-            .iter()
-            .fold(0, |acc: u8, c| acc + cell_to_int(c)),
+            ],
 
             // Bottom-right corner
-            a if a == (max_row, max_col) => [
+            a if a == (max_row, max_col) => vec![
                 self.get_item(row - 1, col - 1),
                 self.get_item(row, col - 1),
                 self.get_item(row - 1, col),
-            ]
-            .iter()
-            .fold(0, |acc: u8, c| acc + cell_to_int(c)),
+            ],
 
             // Top row
-            a if a.0 == 0 => [
+            a if a.0 == 0 => vec![
                 self.get_item(row, col - 1),
                 self.get_item(row + 1, col - 1),
                 self.get_item(row + 1, col),
                 self.get_item(row, col + 1),
                 self.get_item(row + 1, col + 1),
-            ]
-            .iter()
-            .fold(0, |acc: u8, c| acc + cell_to_int(c)),
+            ],
 
             // Bottom row
-            a if a.0 == max_row => [
+            a if a.0 == max_row => vec![
                 self.get_item(row - 1, col - 1),
                 self.get_item(row, col - 1),
                 self.get_item(row - 1, col),
                 self.get_item(row - 1, col + 1),
                 self.get_item(row, col + 1),
-            ]
-            .iter()
-            .fold(0, |acc: u8, c| acc + cell_to_int(c)),
+            ],
 
             // Leftmost column
-            a if a.1 == 0 => [
+            a if a.1 == 0 => vec![
                 self.get_item(row - 1, col),
                 self.get_item(row + 1, col),
                 self.get_item(row - 1, col + 1),
                 self.get_item(row, col + 1),
                 self.get_item(row + 1, col + 1),
-            ]
-            .iter()
-            .fold(0, |acc: u8, c| acc + cell_to_int(c)),
+            ],
 
             // Rightmost column
-            a if a.1 == max_col => [
+            a if a.1 == max_col => vec![
                 self.get_item(row - 1, col - 1),
                 self.get_item(row, col - 1),
                 self.get_item(row + 1, col - 1),
                 self.get_item(row - 1, col),
                 self.get_item(row + 1, col),
-            ]
-            .iter()
-            .fold(0, |acc: u8, c| acc + cell_to_int(c)),
+            ],
 
             // Otherwise
-            _ => [
+            _ => vec![
                 self.get_item(row - 1, col - 1),
                 self.get_item(row, col - 1),
                 self.get_item(row + 1, col - 1),
@@ -255,10 +239,11 @@ impl Game {
                 self.get_item(row - 1, col + 1),
                 self.get_item(row, col + 1),
                 self.get_item(row + 1, col + 1),
-            ]
-            .iter()
-            .fold(0, |acc: u8, c| acc + cell_to_int(c)),
+            ],
         }
+        .iter()
+        .map(|c| cell_to_int(c))
+        .sum()
     }
 }
 
@@ -266,7 +251,7 @@ impl Game {
 mod tests {
     use crate::game_logic::cell::Cell;
 
-    use super::{Game, GameState};
+    use super::Game;
 
     #[test]
     fn create_new_game() -> () {
